@@ -28,8 +28,14 @@ Links.prototype.addLink = function(link) {
 	// create string representation
 	var hash = this.hash(link);
 
-	// add to the links
-	this.links[hash] = link;
+	// if hash already exists, increment the value
+	if (this.links[hash]) {
+		this.links[hash].value++;
+	} else {
+		// if hash does not exist, create with a value of 1
+		link.value = 1;
+		this.links[hash] = link;
+	}
 };
 
 /**
