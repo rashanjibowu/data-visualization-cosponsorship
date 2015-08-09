@@ -3,3 +3,6 @@
 *.Rproj*
 *.RProj
 *_cache
+
+# data files
+cosponsorship2010/
