@@ -3,6 +3,7 @@ $(document).ready(function() {
 
 	var data = getMockData();
 
+	var nodes = new Nodes();
 	var links = new Links();
 	console.log(links.getLinksAsArray());
 
@@ -127,6 +128,20 @@ Links.prototype.convertDataToLinks = function(data) {
 		// create links from senator indices
 		this.generateLinks(senIndices);
 	}
+};
+
+function Nodes() {
+	this.nodes = [
+		{ name: "Huey", party: "Democrat" },
+		{ name: "Louie", party: "Republican" },
+		{ name: "Donald", party: "Democrat" },
+		{ name: "Michael", party: "Democrat" },
+		{ name: "Marissa", party: "Republican" }
+	];
+}
+
+Nodes.prototype.getNodes = function() {
+	return this.nodes;
 };
 
 /**
