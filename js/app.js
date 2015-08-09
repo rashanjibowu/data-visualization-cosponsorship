@@ -5,10 +5,87 @@ $(document).ready(function() {
 
 	var nodes = new Nodes();
 	var links = new Links();
+	links.convertDataToLinks(data);
+
 	console.log(links.getLinksAsArray());
 
-	links.convertDataToLinks(data);
-	console.log(links.getLinksAsArray());
+	// set up graph data
+	var graph = {
+		links: links.getLinksAsArray(),
+		nodes: nodes.getNodes()
+	};
+
+	var dimensions = {
+		outerHeight: 400,
+		outerWidth: 400,
+		margins: {
+			top: 20,
+			bottom: 20,
+			left: 20,
+			right: 20
+		}
+	};
+
+	dimensions.innerHeight = dimensions.outerHeight - dimensions.margins.top - dimensions.margins.bottom;
+	dimensions.innerWidth = dimensions.outerWidth - dimensions.margins.left - dimensions.margins.right;
+
+	var svg = d3.select("#visualization")
+				.append("svg")
+				.attr({
+					width: dimensions.outerWidth,
+					height: dimensions.outerHeight,
+				});
+
+	var canvas = svg.append("g")
+					.attr({
+						width: dimensions.innerWidth,
+						height: dimensions.innerHeight,
+						transform: "translate(" + dimensions.margins.left + "," + dimensions.margins.top + ")"
+					});
+
+	var color = d3.scale.category20();
+
+	var force = d3.layout.force()
+					.nodes(graph.nodes)
+					.links(graph.links)
+					.size([dimensions.innerWidth, dimensions.innerHeight])
+					.linkStrength(0.1)
+					.friction(0.9)
+					.linkDistance(20)
+					.charge(-30)
+					.gravity(0.1)
+					.theta(0.8)
+					.alpha(0.1)
+					.start();
+
+	var link = canvas.selectAll(".link")
+		.data(graph.links)
+		.enter().append("line")
+		.attr("class", "link")
+		.style("stroke-width", function(d) { return 1; });//Math.sqrt(d.value); });
+
+	var node = canvas.selectAll(".node")
+		.data(graph.nodes)
+		.enter().append("circle")
+		.attr("class", "node")
+		.attr("r", 5)
+		.style("fill", function(d) { return color(d.party); })
+		.call(force.drag);
+
+	node.append("title")
+		.text(function(d) { return d.name; });
+
+	force.on("tick", function() {
+		link
+			.attr("x1", function(d) { return d.source.x; })
+			.attr("y1", function(d) { return d.source.y; })
+			.attr("x2", function(d) { return d.target.x; })
+			.attr("y2", function(d) { return d.target.y; });
+
+		node
+			.attr("cx", function(d) { return d.x; })
+			.attr("cy", function(d) { return d.y; });
+	});
 });
 
 /**
