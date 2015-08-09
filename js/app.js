@@ -2,16 +2,107 @@ $(document).ready(function() {
 	console.log("We are ready");
 
 	var data = getMockData();
-	var links = convertDataToLinks(data);
-	console.log(links);
+
+	var links = new Links();
+	console.log(links.getLinksAsArray());
+
+	links.convertDataToLinks(data);
+	console.log(links.getLinksAsArray());
 });
 
 /**
- * Converts the dataset into links in the formate required for a force-directed graph
+ * Object containing all of the links
+ */
+function Links() {
+
+	// reference to the links
+	this.links = {};
+}
+
+/**
+ * Add a link to the Links object ensuring that there are no duplicates
+ * @param {object} link Link object to be added
+ * @return {void}
+ */
+Links.prototype.addLink = function(link) {
+	// create string representation
+	var hash = this.hash(link);
+
+	// add to the links
+	this.links[hash] = link;
+};
+
+/**
+ * Create a hash "property representation" of a link
+ * This is used to prevent duplicate links
+ * @param  {object} linkObject A link object (with a source and target)
+ * @return {string}            Representation of a link
+ */
+Links.prototype.hash = function(linkObject) {
+
+	// normalize the property to prevent duplicates
+	// S9T5 is the same as S5T9
+	if (linkObject.source < linkObject.target) {
+		smaller = linkObject.source;
+		larger = linkObject.target;
+	} else {
+		smaller = linkObject.target;
+		larger = linkObject.source;
+	}
+
+	return "S" + smaller + "T" + larger;
+};
+
+/**
+ * Returns all links as an object
+ * @return {object} All links in a single object
+ */
+Links.prototype.getLinksAsObject = function() {
+	return this.links;
+};
+
+/**
+ * Returns all links as an array
+ * @return {array} All links as an array
+ */
+Links.prototype.getLinksAsArray = function() {
+
+	var array = [];
+
+	for (var key in this.links) {
+		if (this.links.hasOwnProperty(key)) {
+			array.push(this.links[key]);
+		}
+	}
+
+	return array;
+};
+
+/**
+ * Creates links for graph from array of indices
+ * @param  {array} array Array of co-occurred indices
+ * @return {array}       Array of objects each specifying target and source for a link
+ */
+Links.prototype.generateLinks = function(array) {
+	// array is a list of senator indices
+	for (var i = 0; i < array.length; i++) {
+		for (var j = i; j < array.length; j++) {
+			if (i == j) continue;
+
+			this.addLink({
+				source: array[i],
+				target: array[j]
+			});
+		}
+	}
+};
+
+/**
+ * Converts the dataset into links in the format required for a force-directed graph
  * @param  {array} data Full data set
  * @return {array}      Array of objects representing links in a graph
  */
-function convertDataToLinks(data) {
+Links.prototype.convertDataToLinks = function(data) {
 	// data is an array of arrays
 	// each row is a senator's sponsorship record
 
@@ -22,18 +113,15 @@ function convertDataToLinks(data) {
 	// return links
 
 	var numBills = data[0].length;
-	var links = [];
 
 	for (var billIndex = 0; billIndex < numBills; billIndex++) {
 
 		var senIndices = getCoocurredSenators(data, billIndex);
 
 		// create links from senator indices
-		links = links.concat(createLinks(senIndices));
+		this.generateLinks(senIndices);
 	}
-
-	return links;
-}
+};
 
 /**
  * For a given vertical slice of the matrix (a bill), find all of the senators who cosponsored that bill
@@ -51,30 +139,6 @@ function getCoocurredSenators(data, billIndex) {
 	}
 
 	return senIndices;
-}
-
-/**
- * Creates links for graph from array of indices
- * @param  {array} array Array of co-occurred indices
- * @return {array}       Array of objects each specifying target and source for a link
- */
-function createLinks(array) {
-	// array is a list of senator indices
-
-	var links = [];
-
-	for (var i = 0; i < array.length; i++) {
-		for (var j = i; j < array.length; j++) {
-			if (i == j) continue;
-
-			links.push({
-				source: array[i],
-				target: array[j]
-			});
-		}
-	}
-
-	return links;
 }
 
 /**
