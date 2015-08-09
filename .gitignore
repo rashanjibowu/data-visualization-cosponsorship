@@ -1,4 +1,5 @@
 # R history and project files
 .Rhistory
-.Rproj
-.RProj
+*.Rproj*
+*.RProj
+*_cache
