@@ -37,6 +37,8 @@ str(senators)
 
 Clean data
 
+Since there is so much data, let's focus on Senate Bills (`SN`) and ignore all other bill types
+
 ```{r clean data}
 
 # Make the column names for senate bills human readable
@@ -64,6 +66,7 @@ cosponsorship[1:5,1:5]
 
 ```
 
+
 Make sense of the data
 
 According to the codebook, the cosponsorship data can take one of several values:
@@ -84,6 +87,10 @@ This forms the basis of a social graph where senators are nodes and the bills th
 First, let's find all bills that have cosponsorship
 
 ```{r}
+
+# senate bills only
+snOnly <- grep("^(SN)", colnames(cosponsorship), value = FALSE)
+cosponsorship <- cosponsorship[,snOnly]
 
 # remove columns (bills) that don't have cosponsorship
 nocosponsor <- (colSums(cosponsorship) <= 1)
@@ -117,3 +124,10 @@ filtered2[lazysenator, 1]
 
 ```
 
+Finally, let's write the data so that it can be visualized in D3.
+
+```{r}
+
+write.csv(filtered2, "./data/plotdata.csv")
+
+```
