@@ -5,15 +5,13 @@ $(document).ready(function() {
 
 		if (error) throw error;
 
-		console.log('Data loaded');
-		console.log(data);
-
 		// create Graph object
 		var graph = new Graph(data);
+		var nodes = graph.getNodes();
+		var links = graph.getLinks();
 
 		// plot data
-		console.log("plotting data...");
-
+		console.log("Plotting data... %d nodes and %d links", nodes.length, links.length);
 	});
 
 });
@@ -32,64 +30,19 @@ function Graph(data) {
 	this.nodes = [];
 	this.links = [];
 
-	if (data) {
-		console.log("we got data!");
-	} else  {
-		console.error("No data was found!");
-	}
+	// reference to array version of data
+	this.dataAsArray = [];
 
 	// transform this data into a usable format
-	// store the nodes
-	data.forEach(function(row, index, thisArray) {
-
-		var sponsorshipRecord = [];
-		var nameKey = "";
-
-		for (var key in row) {
-			// convert the non-namekey portion of object into an array
-			if (key !== nameKey) {
-				if (row.hasOwnProperty(key)) {
-					sponsorshipRecord.push({
-						bill: key,
-						sponsorship: +row[key],
-						senator: row[nameKey]
-					});
-				}
-			}
-
-			this.addNode({
-				name: row[nameKey],
-				party: (Math.random() < 0.5) ? "Democrat" : "Republican"
-			});
-		}
-	}, this);
+	this.parseNodes(data);
 
 	// store the links
-	// links are a cross section - need a vertical slicing of the data
-	for (var billIndex = 0; billIndex < data[0].length; billIndex++) {
-		// find co-occurrences of sponsorship
-		var cooccurredIndices = getCooccurredSenators(data, billIndex);
-		console.log(cooccurredIndices);
-	}
+	this.parseLinks(data);
 }
 
 /**
- * For a given vertical slice of the matrix (a bill), find all of the senators who cosponsored that bill
- * @param  {array} data      Full data set
- * @param  {integer} billIndex Column index
- * @return {array}           Array of senator (indices) who cosponsored the bill
+ * ---------------------- Nodes-related methods--------------------------
  */
-function getCooccurredSenators(data, billIndex) {
-	var senIndices = [];
-	for (var senatorIndex = 0; senatorIndex < data.length; senatorIndex++) {
-		var sponsorshipObject = data[senatorIndex][billIndex];
-		if (sponsorshipObject.sponsorship >= 1 && sponsorshipObject.sponsorship <= 3) {
-			senIndices.push(senatorIndex);
-		}
-	}
-
-	return senIndices;
-}
 
 Graph.prototype.getNodes = function() {
 	return this.nodes;
@@ -98,3 +51,90 @@ Graph.prototype.getNodes = function() {
 Graph.prototype.addNode = function(node) {
 	this.nodes.push(node);
 };
+
+Graph.prototype.parseNodes = function(data) {
+	// store the nodes
+	data.forEach(function(row, index, thisArray) {
+
+		var nameKey = "";
+
+		this.addNode(
+			{
+				name: row[nameKey],
+				party: (Math.random() < 0.5) ? "Democrat" : "Republican"
+			}
+		);
+
+	}, this);
+};
+
+
+/**
+ * ----------------------- Links-related methods --------------------------
+ */
+
+Graph.prototype.getLinks = function() {
+	return this.links;
+};
+
+Graph.prototype.addLink = function(link) {
+	// TODO: hash to prevent duplicates
+};
+
+Graph.prototype.parseLinks = function(data) {
+
+	// convert each row into an array
+	for (var rowIndex = 0; rowIndex < data.length; rowIndex++) {
+
+		var row = [];
+		for (var key in data[rowIndex]) {
+			if (data[rowIndex].hasOwnProperty(key) && key !== "") {
+				row.push({
+					bill: key,
+					sponsorshipLevel: +data[rowIndex][key]
+				});
+			}
+		}
+
+		this.dataAsArray.push(row);
+	}
+
+	// links are a cross section - need a vertical slicing of the data
+	for (var billIndex = 0; billIndex < this.dataAsArray[0].length; billIndex++) {
+		// find co-occurrences of sponsorship
+		var cooccurredIndices = getCooccurredSenators(this.dataAsArray, billIndex);
+
+		// create links from the co-occurred indices
+		for (var i = 0; i < cooccurredIndices.length; i++) {
+			for (var j = i; j < cooccurredIndices.length; j++) {
+
+				if (i == j) continue;
+
+				this.links.push({
+					source: cooccurredIndices[i],
+					target: cooccurredIndices[j],
+					value: 9
+				});
+			}
+		}
+	}
+};
+
+/**
+ * For a given vertical slice of the matrix (a bill), find all of the senators who cosponsored that bill
+ * @param  {array} data      Full data set
+ * @param  {integer} billIndex Column index
+ * @return {array}           Array of senator (indices) who cosponsored the bill
+ */
+function getCooccurredSenators(data, billIndex) {
+
+	var senIndices = [];
+	for (var senatorIndex = 0; senatorIndex < data.length; senatorIndex++) {
+		var sponsorshipObject = data[senatorIndex][billIndex];
+		if (sponsorshipObject.sponsorshipLevel >= 1 && sponsorshipObject.sponsorshipLevel <= 3) {
+			senIndices.push(senatorIndex);
+		}
+	}
+
+	return senIndices;
+}
